@@ -1,7 +1,8 @@
-import { pickCoverSource } from '../core/image-rules.js';
+import { pickCoverSource, validateImageRules } from '../core/image-rules.js';
 import { writeDeterministicImage } from '../core/images.js';
 import { buildManifest, curatedPath, manifestPath, productDir } from '../core/pipeline.js';
-import type { Dataset, Product } from '../core/schema.js';
+import type { Product } from '../core/schema.js';
+import { validateDataset } from '../core/validate.js';
 import { ensureDir, readJsonFile, writeJsonFile } from '../utils/fs.js';
 import { success } from '../utils/log.js';
 
@@ -10,7 +11,14 @@ function sortProducts(products: Product[]): Product[] {
 }
 
 export async function stage(runId: string): Promise<void> {
-  const curated = await readJsonFile<Dataset>(curatedPath(runId));
+  const rawCurated = await readJsonFile<unknown>(curatedPath(runId));
+  const curated = validateDataset(rawCurated);
+  const imageRuleErrors = validateImageRules(curated);
+
+  if (imageRuleErrors.length > 0) {
+    throw new Error(`Curated data failed image policy checks:\n${imageRuleErrors.join('\n')}`);
+  }
+
   const sortedProducts = sortProducts(curated.products);
   const manifestProducts = [];
 

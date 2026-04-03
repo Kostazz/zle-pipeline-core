@@ -30,6 +30,8 @@ These are **policy choices**, not universal truths. Tune them in `src/core/image
 
 If validation, staging, or manifest consistency checks fail, command exits non-zero and pipeline stops. No partial publish state.
 
+Each stage re-validates the files it reads (`curated.json`, `manifest.json`) as untrusted input.
+
 ## Filesystem safety
 
 `runId` is allowlisted (`^run-[A-Za-z0-9_-]+$`) before any file paths are built, so `curate/stage/publish` cannot traverse outside `tmp/` via crafted IDs.
@@ -53,6 +55,7 @@ zle-pipeline-core/
     core/
       schema.ts
       validate.ts
+      manifest-schema.ts
       image-rules.ts
       images.ts
       pipeline.ts
