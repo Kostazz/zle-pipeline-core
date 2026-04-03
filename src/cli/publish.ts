@@ -1,4 +1,12 @@
-import { assertValidProductId, coverPath, curatedPath, manifestPath, primaryPath } from '../core/pipeline.js';
+import {
+  assertValidProductId,
+  buildManifest,
+  coverPath,
+  curatedPath,
+  expectedManifestProducts,
+  manifestPath,
+  primaryPath
+} from '../core/pipeline.js';
 import { validateManifest } from '../core/manifest-schema.js';
 import { validateDataset } from '../core/validate.js';
 import { lstatOrNull, readJsonFile } from '../utils/fs.js';
@@ -37,22 +45,8 @@ function duplicateIds(ids: string[]): string[] {
     .sort();
 }
 
-function sortedIds(ids: string[]): string[] {
-  return [...ids].sort((a, b) => a.localeCompare(b));
-}
-
-function idsEqual(a: string[], b: string[]): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-
-  for (let i = 0; i < a.length; i += 1) {
-    if (a[i] !== b[i]) {
-      return false;
-    }
-  }
-
-  return true;
+function normalize(value: unknown): string {
+  return JSON.stringify(value);
 }
 
 export async function publish(runId: string): Promise<void> {
@@ -67,12 +61,6 @@ export async function publish(runId: string): Promise<void> {
 
   if (manifest.runId !== runId) {
     throw new Error(`Publish check failed: manifest runId (${manifest.runId}) does not match requested runId (${runId})`);
-  }
-
-  if (manifest.productCount !== manifest.products.length) {
-    throw new Error(
-      `Publish check failed: manifest productCount (${manifest.productCount}) does not match products length (${manifest.products.length})`
-    );
   }
 
   const curatedIds = curated.products.map((product) => product.id);
@@ -92,10 +80,16 @@ export async function publish(runId: string): Promise<void> {
     throw new Error(`Publish check failed: manifest contains duplicate product ids: ${manifestDuplicates.join(', ')}`);
   }
 
-  const sortedCuratedIds = sortedIds(curatedIds);
-  const sortedManifestIds = sortedIds(manifestIds);
-  if (!idsEqual(sortedCuratedIds, sortedManifestIds)) {
-    throw new Error('Publish check failed: manifest product IDs do not match curated product IDs');
+  const expectedManifest = buildManifest(runId, expectedManifestProducts(curated.products));
+
+  if (normalize(manifest.products) !== normalize(expectedManifest.products)) {
+    throw new Error('Publish check failed: manifest product records do not match curated-derived expected snapshot');
+  }
+
+  if (manifest.productCount !== expectedManifest.productCount) {
+    throw new Error(
+      `Publish check failed: manifest productCount (${manifest.productCount}) does not match expected (${expectedManifest.productCount})`
+    );
   }
 
   for (const product of curated.products) {

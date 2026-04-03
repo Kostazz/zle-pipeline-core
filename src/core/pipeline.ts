@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { PRODUCT_ID_PATTERN } from './schema.js';
+import { pickCoverSource } from './image-rules.js';
+import { PRODUCT_ID_PATTERN, type Product } from './schema.js';
 
 export const TMP_DIR = 'tmp';
 const RUN_ID_PATTERN = /^run-[A-Za-z0-9_-]+$/;
@@ -79,6 +80,32 @@ export type StageManifest = {
   productCount: number;
   products: ManifestProduct[];
 };
+
+export function expectedManifestProducts(products: Product[]): ManifestProduct[] {
+  const sortedProducts = [...products].sort((a, b) => a.id.localeCompare(b.id));
+
+  return sortedProducts.map((product) => {
+    const primarySource = product.sourceImages[0];
+    if (!primarySource) {
+      throw new Error(`Product ${product.id}: missing primary source image`);
+    }
+
+    const coverSource = pickCoverSource(product);
+
+    return {
+      id: product.id,
+      category: product.category,
+      sourceImageCount: product.sourceImages.length,
+      stagedFiles: ['cover.jpg', '01.jpg'],
+      outputMap: {
+        cover: 'cover.jpg',
+        primary: '01.jpg'
+      },
+      coverSource,
+      primarySource
+    };
+  });
+}
 
 export function buildManifest(runId: string, products: ManifestProduct[]): StageManifest {
   const sorted = [...products].sort((a, b) => a.id.localeCompare(b.id));
