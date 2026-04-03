@@ -23,6 +23,37 @@ function assertSafeProductId(productId: string): void {
   }
 }
 
+function duplicateIds(ids: string[]): string[] {
+  const counts = new Map<string, number>();
+
+  for (const id of ids) {
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([id]) => id)
+    .sort();
+}
+
+function sortedIds(ids: string[]): string[] {
+  return [...ids].sort((a, b) => a.localeCompare(b));
+}
+
+function idsEqual(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export async function publish(runId: string): Promise<void> {
   const rawCurated = await readJsonFile<unknown>(curatedPath(runId));
   const curated = validateDataset(rawCurated);
@@ -43,21 +74,27 @@ export async function publish(runId: string): Promise<void> {
     );
   }
 
-  const curatedIds = new Set(curated.products.map((product) => product.id));
-  const manifestIds = new Set(manifest.products.map((product) => product.id));
+  const curatedIds = curated.products.map((product) => product.id);
+  const manifestIds = manifest.products.map((product) => product.id);
 
-  for (const id of manifestIds) {
+  for (const id of [...curatedIds, ...manifestIds]) {
     assertSafeProductId(id);
   }
 
-  for (const id of curatedIds) {
-    if (!manifestIds.has(id)) {
-      throw new Error(`Publish check failed: manifest missing product ${id}`);
-    }
+  const curatedDuplicates = duplicateIds(curatedIds);
+  if (curatedDuplicates.length > 0) {
+    throw new Error(`Publish check failed: curated data contains duplicate product ids: ${curatedDuplicates.join(', ')}`);
   }
 
-  if (manifestIds.size !== curatedIds.size) {
-    throw new Error('Publish check failed: manifest product set does not match curated product set');
+  const manifestDuplicates = duplicateIds(manifestIds);
+  if (manifestDuplicates.length > 0) {
+    throw new Error(`Publish check failed: manifest contains duplicate product ids: ${manifestDuplicates.join(', ')}`);
+  }
+
+  const sortedCuratedIds = sortedIds(curatedIds);
+  const sortedManifestIds = sortedIds(manifestIds);
+  if (!idsEqual(sortedCuratedIds, sortedManifestIds)) {
+    throw new Error('Publish check failed: manifest product IDs do not match curated product IDs');
   }
 
   for (const product of curated.products) {
