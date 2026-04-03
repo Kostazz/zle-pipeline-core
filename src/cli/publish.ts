@@ -1,6 +1,5 @@
-import { coverPath, curatedPath, manifestPath, primaryPath } from '../core/pipeline.js';
+import { assertValidProductId, coverPath, curatedPath, manifestPath, primaryPath } from '../core/pipeline.js';
 import { validateManifest } from '../core/manifest-schema.js';
-import { PRODUCT_ID_PATTERN } from '../core/schema.js';
 import { validateDataset } from '../core/validate.js';
 import { readJsonFile, statOrNull } from '../utils/fs.js';
 import { success } from '../utils/log.js';
@@ -14,12 +13,6 @@ async function assertNonEmptyFile(filePath: string, label: string): Promise<void
 
   if (stat.size === 0) {
     throw new Error(`Publish check failed: empty required ${label} at ${filePath}`);
-  }
-}
-
-function assertSafeProductId(productId: string): void {
-  if (!PRODUCT_ID_PATTERN.test(productId)) {
-    throw new Error(`Publish check failed: unsafe product id "${productId}"`);
   }
 }
 
@@ -78,7 +71,7 @@ export async function publish(runId: string): Promise<void> {
   const manifestIds = manifest.products.map((product) => product.id);
 
   for (const id of [...curatedIds, ...manifestIds]) {
-    assertSafeProductId(id);
+    assertValidProductId(id);
   }
 
   const curatedDuplicates = duplicateIds(curatedIds);

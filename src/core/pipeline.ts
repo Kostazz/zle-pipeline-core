@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { PRODUCT_ID_PATTERN } from './schema.js';
 
 export const TMP_DIR = 'tmp';
 const RUN_ID_PATTERN = /^run-[A-Za-z0-9_-]+$/;
@@ -15,6 +16,14 @@ export function assertValidRunId(runId: string): string {
   }
 
   return runId;
+}
+
+export function assertValidProductId(productId: string): string {
+  if (!PRODUCT_ID_PATTERN.test(productId)) {
+    throw new Error(`Invalid productId "${productId}". Expected lowercase slug matching ${PRODUCT_ID_PATTERN.toString()}`);
+  }
+
+  return productId;
 }
 
 export function runRoot(runId: string): string {
@@ -39,7 +48,8 @@ export function productsDir(runId: string): string {
 }
 
 export function productDir(runId: string, productId: string): string {
-  return path.join(productsDir(runId), productId);
+  const safeProductId = assertValidProductId(productId);
+  return path.join(productsDir(runId), safeProductId);
 }
 
 export function coverPath(runId: string, productId: string): string {
