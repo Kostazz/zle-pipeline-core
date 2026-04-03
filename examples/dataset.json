@@ -1,0 +1,32 @@
+{
+  "products": [
+    {
+      "id": "alpine-bottle",
+      "name": "Alpine Insulated Bottle",
+      "category": "gear",
+      "sourceImages": [
+        "incoming/alpine-bottle/alpine-cover.jpg",
+        "incoming/alpine-bottle/alpine-detail.jpg"
+      ],
+      "price": 34.99
+    },
+    {
+      "id": "basalt-pack",
+      "name": "Basalt Day Pack 20L",
+      "category": "apparel",
+      "sourceImages": [
+        "incoming/basalt-pack/basalt-hero.jpg",
+        "incoming/basalt-pack/basalt-side.webp"
+      ],
+      "price": 89
+    },
+    {
+      "id": "cedar-rope",
+      "name": "Cedar Utility Rope",
+      "category": "home",
+      "sourceImages": [
+        "incoming/cedar-rope/cedar-main.png"
+      ]
+    }
+  ]
+}
