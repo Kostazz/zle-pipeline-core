@@ -1,4 +1,4 @@
-import { generateRunId, datasetPath } from '../core/pipeline.js';
+import { datasetPath, generateRunId } from '../core/pipeline.js';
 import { readJsonFile, writeJsonFile } from '../utils/fs.js';
 import { success } from '../utils/log.js';
 
@@ -12,5 +12,6 @@ export async function ingest(): Promise<string> {
   await writeJsonFile(outputPath, rawDataset);
 
   success(`Ingest complete. runId=${runId}`);
+  console.log(`RUN_ID=${runId}`);
   return runId;
 }

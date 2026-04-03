@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 export const TMP_DIR = 'tmp';
+const RUN_ID_PATTERN = /^run-[A-Za-z0-9_-]+$/;
 
 export function generateRunId(now: Date = new Date()): string {
   const iso = now.toISOString().replace(/[.:]/g, '-');
@@ -8,8 +9,17 @@ export function generateRunId(now: Date = new Date()): string {
   return `run-${iso}-${seed}`;
 }
 
+export function assertValidRunId(runId: string): string {
+  if (!RUN_ID_PATTERN.test(runId)) {
+    throw new Error(`Invalid runId "${runId}". Expected format matching ${RUN_ID_PATTERN.toString()}`);
+  }
+
+  return runId;
+}
+
 export function runRoot(runId: string): string {
-  return path.join(TMP_DIR, runId);
+  const safeRunId = assertValidRunId(runId);
+  return path.join(TMP_DIR, safeRunId);
 }
 
 export function datasetPath(runId: string): string {

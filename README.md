@@ -30,6 +30,11 @@ These are **policy choices**, not universal truths. Tune them in `src/core/image
 
 If validation, staging, or manifest consistency checks fail, command exits non-zero and pipeline stops. No partial publish state.
 
+## Filesystem safety
+
+`runId` is allowlisted (`^run-[A-Za-z0-9_-]+$`) before any file paths are built, so `curate/stage/publish` cannot traverse outside `tmp/` via crafted IDs.
+
+
 ## Repository structure
 
 ```text
@@ -77,7 +82,7 @@ npm run demo
 ### Manual flow
 
 ```bash
-npm run ingest
+npm run ingest  # prints RUN_ID=<value>
 npm run curate -- --run-id <RUN_ID>
 npm run stage -- --run-id <RUN_ID>
 npm run publish -- --run-id <RUN_ID>

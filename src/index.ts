@@ -4,6 +4,7 @@ import { curate } from './cli/curate.js';
 import { ingest } from './cli/ingest.js';
 import { publish } from './cli/publish.js';
 import { stage } from './cli/stage.js';
+import { assertValidRunId } from './core/pipeline.js';
 import { error } from './utils/log.js';
 
 void yargs(hideBin(process.argv))
@@ -23,7 +24,7 @@ void yargs(hideBin(process.argv))
         describe: 'Run ID produced by ingest'
       }),
     async (args) => {
-      await curate(args.runId as string);
+      await curate(assertValidRunId(args.runId as string));
     }
   )
   .command(
@@ -36,7 +37,7 @@ void yargs(hideBin(process.argv))
         describe: 'Run ID produced by ingest'
       }),
     async (args) => {
-      await stage(args.runId as string);
+      await stage(assertValidRunId(args.runId as string));
     }
   )
   .command(
@@ -49,7 +50,7 @@ void yargs(hideBin(process.argv))
         describe: 'Run ID produced by ingest'
       }),
     async (args) => {
-      await publish(args.runId as string);
+      await publish(assertValidRunId(args.runId as string));
     }
   )
   .fail((msg, err) => {
