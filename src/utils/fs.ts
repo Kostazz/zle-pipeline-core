@@ -26,3 +26,11 @@ export async function statOrNull(filePath: string) {
     return null;
   }
 }
+
+export async function lstatOrNull(filePath: string) {
+  try {
+    return await fs.lstat(filePath);
+  } catch {
+    return null;
+  }
+}

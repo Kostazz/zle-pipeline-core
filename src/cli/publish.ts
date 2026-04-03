@@ -1,14 +1,22 @@
 import { assertValidProductId, coverPath, curatedPath, manifestPath, primaryPath } from '../core/pipeline.js';
 import { validateManifest } from '../core/manifest-schema.js';
 import { validateDataset } from '../core/validate.js';
-import { readJsonFile, statOrNull } from '../utils/fs.js';
+import { lstatOrNull, readJsonFile } from '../utils/fs.js';
 import { success } from '../utils/log.js';
 
 async function assertNonEmptyFile(filePath: string, label: string): Promise<void> {
-  const stat = await statOrNull(filePath);
+  const stat = await lstatOrNull(filePath);
 
-  if (!stat || !stat.isFile()) {
+  if (!stat) {
     throw new Error(`Publish check failed: missing required ${label} at ${filePath}`);
+  }
+
+  if (stat.isSymbolicLink()) {
+    throw new Error(`Publish check failed: symlink is not allowed for ${label} at ${filePath}`);
+  }
+
+  if (!stat.isFile()) {
+    throw new Error(`Publish check failed: required ${label} is not a regular file at ${filePath}`);
   }
 
   if (stat.size === 0) {
