@@ -1,5 +1,5 @@
 import { coverPath, curatedPath, manifestPath, primaryPath } from '../core/pipeline.js';
-import { manifestSchema } from '../core/manifest-schema.js';
+import { validateManifest } from '../core/manifest-schema.js';
 import { PRODUCT_ID_PATTERN } from '../core/schema.js';
 import { validateDataset } from '../core/validate.js';
 import { readJsonFile, statOrNull } from '../utils/fs.js';
@@ -31,7 +31,11 @@ export async function publish(runId: string): Promise<void> {
   await assertNonEmptyFile(manifestFile, 'manifest file');
 
   const rawManifest = await readJsonFile<unknown>(manifestFile);
-  const manifest = manifestSchema.parse(rawManifest);
+  const manifest = validateManifest(rawManifest);
+
+  if (manifest.runId !== runId) {
+    throw new Error(`Publish check failed: manifest runId (${manifest.runId}) does not match requested runId (${runId})`);
+  }
 
   if (manifest.productCount !== manifest.products.length) {
     throw new Error(
@@ -42,8 +46,11 @@ export async function publish(runId: string): Promise<void> {
   const curatedIds = new Set(curated.products.map((product) => product.id));
   const manifestIds = new Set(manifest.products.map((product) => product.id));
 
-  for (const id of curatedIds) {
+  for (const id of manifestIds) {
     assertSafeProductId(id);
+  }
+
+  for (const id of curatedIds) {
     if (!manifestIds.has(id)) {
       throw new Error(`Publish check failed: manifest missing product ${id}`);
     }

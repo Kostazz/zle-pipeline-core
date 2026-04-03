@@ -1,9 +1,10 @@
 import { z } from 'zod';
 
 export const PRODUCT_ID_PATTERN = /^[a-z0-9-]+$/;
+export const productIdSchema = z.string().min(3).max(64).regex(PRODUCT_ID_PATTERN);
 
 export const productSchema = z.object({
-  id: z.string().min(3).max(64).regex(PRODUCT_ID_PATTERN),
+  id: productIdSchema,
   name: z.string().min(2).max(120),
   category: z.enum(['gear', 'apparel', 'home', 'digital']),
   sourceImages: z.array(z.string().min(1)).min(1),

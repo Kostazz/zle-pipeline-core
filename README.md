@@ -31,6 +31,7 @@ These are **policy choices**, not universal truths. Tune them in `src/core/image
 If validation, staging, or manifest consistency checks fail, command exits non-zero and pipeline stops. No partial publish state.
 
 Each stage re-validates the files it reads (`curated.json`, `manifest.json`) as untrusted input.
+Manifest product IDs must match the same lowercase slug policy (`^[a-z0-9-]+$`).
 
 ## Filesystem safety
 

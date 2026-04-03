@@ -1,8 +1,8 @@
-import { z } from 'zod';
-import { PRODUCT_ID_PATTERN } from './schema.js';
+import { ZodError, z } from 'zod';
+import { productIdSchema } from './schema.js';
 
 export const manifestProductSchema = z.object({
-  id: z.string().regex(PRODUCT_ID_PATTERN),
+  id: productIdSchema,
   category: z.string().min(1),
   sourceImageCount: z.number().int().min(1),
   stagedFiles: z.tuple([z.literal('cover.jpg'), z.literal('01.jpg')]),
@@ -22,3 +22,18 @@ export const manifestSchema = z.object({
 });
 
 export type Manifest = z.infer<typeof manifestSchema>;
+
+export function validateManifest(input: unknown): Manifest {
+  try {
+    return manifestSchema.parse(input);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const details = error.issues
+        .map((issue) => `${issue.path.join('.') || '<root>'}: ${issue.message}`)
+        .join('\n');
+      throw new Error(`Manifest validation failed:\n${details}`);
+    }
+
+    throw error;
+  }
+}
