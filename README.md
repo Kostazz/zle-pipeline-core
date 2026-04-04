@@ -128,3 +128,11 @@ Aby týmy měly malé, důvěryhodné jádro pro přísné quality gates nad ima
 ## Sponzoring
 
 Pokud ti tenhle projekt šetří čas nebo odhaluje chyby dřív, než se projeví v produkci, můžeš ho podpořit sponzoringem.
+
+## Support
+
+If this project helps you catch issues early or saves you time in real pipelines, you can support the work here:
+
+→ https://github.com/sponsors/Kostazz
+
+It helps keep the project maintained and evolving.
