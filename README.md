@@ -1,72 +1,78 @@
 # zle-pipeline-core
 
-Validace schématu u produktových obrázků nestačí. Tohle CLI zastaví chyby v názvech a assetech hned na začátku, ještě než rozbijí publish.
+Validace schématu u produktových obrázků nestačí.  
+Tohle CLI zastaví chyby v názvech a assetech dřív, než rozbijí staging nebo publish.
 
 ## Problém
 
-Týmy často posílají datasety, které jsou sice validní JSON, ale provozně nefungují: duplicitní ID, slabé názvy souborů, chybějící kandidát na cover image nebo nekonzistentní sady obrázků. Tyto chyby se obvykle projeví až později při publishi nebo vykreslení storefrontu.
+Týmy často pouští do pipeline datasety, které jsou validní JSON, ale provozně nefungují:
 
-`zle-pipeline-core` je malá fail-closed pipeline přesně pro tuhle mezeru: **ingest → curate → stage → publish**.
+- duplicitní product ID
+- slabé nebo nekonzistentní názvy souborů
+- chybějící cover image
+- rozbité nebo neúplné image sety
 
-## Reálné problémy, které to zachytí
+Tyhle chyby se většinou projeví až pozdě při publishi nebo ve storefrontu.
 
-- Duplicitní product ID v jednom běhu.
-- Produkty bez zdrojových obrázků.
-- Produkty bez použitelného kandidáta na cover image.
-- Zdrojové sady větší, než dovoluje policy (max 5).
-- Nepodporované přípony obrázků.
-- Podezřelé source cesty (`..`, absolutní cesty, backslashe, neplatné znaky).
+`zle-pipeline-core` je malá fail-closed pipeline přesně pro tuhle mezeru:
 
-## Policy rozhodnutí (explicitně)
+`ingest → curate → stage → publish`
 
-Tenhle projekt záměrně používá přísné výchozí nastavení, aby byla pipeline deterministická:
-- Pravidlo pro cover kandidáta: název souboru musí obsahovat `cover`, `hero` nebo `main`.
-- Povolené přípony: `.jpg`, `.jpeg`, `.png`, `.webp`.
-- Path hygiene: pouze lokální relativní cesty, bez traversal patternů.
+## Co to reálně chytí
 
-Tohle jsou **policy volby**, ne univerzální pravdy. Pro svůj domain je upravíš v `src/core/image-rules.ts`.
+- duplicitní product ID v jednom runu
+- produkty bez source images
+- produkty bez použitelného cover image
+- source sety větší, než dovoluje policy (max 5)
+- nepodporované přípony obrázků
+- podezřelé source paths (`..`, absolutní cesty, backslashe, neplatné znaky)
 
-## Fail-closed chování (prakticky)
+## Policy (vědomé rozhodnutí)
 
-Pokud selže validace, staging nebo kontrola konzistence manifestu, příkaz skončí s nenulovým kódem a pipeline se zastaví. Žádný částečný publish stav.
+Tenhle projekt používá přísná výchozí pravidla, aby byl výstup deterministický:
 
-Každá stage znovu validuje soubory, které načítá (`curated.json`, `manifest.json`), jako nedůvěryhodný vstup.
-Product ID v manifestu musí odpovídat stejné lowercase slug policy (`^[a-z0-9-]+$`).
+- **cover candidate**: název obsahuje `cover`, `hero` nebo `main`
+- **povolené přípony**: `.jpg`, `.jpeg`, `.png`, `.webp`
+- **path hygiene**: pouze lokální relativní cesty, bez traversal patternů
 
-## Bezpečnost filesystému
+Tohle nejsou univerzální pravdy.  
+Jsou to záměrné policy volby pro tenhle core.  
+Přizpůsobíš je v `src/core/image-rules.ts`.
 
-`runId` se před vytvořením jakýchkoli cest ověřuje přes allowlist (`^run-[A-Za-z0-9_-]+$`), takže `curate/stage/publish` se přes podvržené ID nedostanou mimo `tmp/`.
+## Fail-closed chování
 
+Když selže validace, staging nebo kontrola manifestu, příkaz skončí s nenulovým exit codem a pipeline se zastaví.
 
-## Struktura repozitáře
+Žádný tichý průchod.  
+Žádný částečný publish.
+
+Každá stage znovu validuje vstupy (`curated.json`, `manifest.json`) jako nedůvěryhodná data.
+
+Product ID musí odpovídat slug patternu:
+
+```
+^[a-z0-9-]+$
+```
+
+## Bezpečnost filesystemu
+
+`runId` se validuje proti allowlistu:
+
+```
+^run-[A-Za-z0-9_-]+$
+```
+
+Díky tomu se `curate`, `stage` a `publish` nedostanou mimo `tmp/` ani při podvrženém ID.
+
+## Struktura
 
 ```text
 zle-pipeline-core/
-  package.json
-  tsconfig.json
-  README.md
-  LICENSE
-  .gitignore
   src/
     cli/
-      ingest.ts
-      curate.ts
-      stage.ts
-      publish.ts
     core/
-      schema.ts
-      validate.ts
-      manifest-schema.ts
-      image-rules.ts
-      images.ts
-      pipeline.ts
     utils/
-      fs.ts
-      log.ts
-    index.ts
   examples/
-    dataset.json
-    run.sh
 ```
 
 ## Instalace
@@ -86,13 +92,22 @@ npm run demo
 ### Manuální flow
 
 ```bash
-npm run ingest  # prints RUN_ID=<value>
+npm run ingest   # prints RUN_ID=<value>
 npm run curate -- --run-id <RUN_ID>
 npm run stage -- --run-id <RUN_ID>
 npm run publish -- --run-id <RUN_ID>
 ```
 
-## Struktura výstupu
+### Example output
+
+```bash
+Ingest complete. runId=run-abc123
+Curate complete. products=3
+Stage complete. artifacts written
+Publish ready. all checks passed
+```
+
+## Výstup
 
 ```text
 tmp/
@@ -108,8 +123,8 @@ tmp/
 
 ## Proč to existuje
 
-Aby týmy měly kompaktní a důvěryhodné jádro s přísnými quality gates pro image sety ještě před přidáním storage, processingu a orchestrace.
+Aby týmy měly malé, důvěryhodné jádro pro přísné quality gates nad image sety ještě před tím, než přidají storage, processing nebo orchestration.
 
 ## Sponzoring
 
-Jestli tohle pomáhá vašim operacím nad produktovými daty, sponzoring přímo podporuje údržbu.
+Pokud ti tenhle projekt šetří čas nebo odhaluje chyby dřív, než se projeví v produkci, můžeš ho podpořit sponzoringem.
