@@ -5,12 +5,13 @@ import {
   curatedPath,
   expectedManifestProducts,
   manifestPath,
+  TMP_DIR,
   productDir,
   productsDir,
   runRoot
 } from '../core/pipeline.js';
 import { validateDataset } from '../core/validate.js';
-import { assertDirectoryInsideRoot, ensureDir, readJsonFile, writeJsonFile } from '../utils/fs.js';
+import { assertDirectoryInsideRoot, assertRealDirInsideRoot, ensureDir, readJsonFile, writeJsonFile } from '../utils/fs.js';
 import { success } from '../utils/log.js';
 
 export async function stage(runId: string): Promise<void> {
@@ -41,6 +42,7 @@ export async function stage(runId: string): Promise<void> {
     await writeDeterministicImage(currentProductDir, 'cover.jpg', product.id, product.coverSource);
   }
 
+  await assertRealDirInsideRoot(runRoot(runId), TMP_DIR);
   await writeJsonFile(manifestPath(runId), buildManifest(runId, manifestProducts));
   success(`Stage complete. runId=${runId}; products=${manifestProducts.length}`);
 }
