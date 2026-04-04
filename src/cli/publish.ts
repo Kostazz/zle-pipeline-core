@@ -7,6 +7,7 @@ import {
   manifestPath,
   primaryPath
 } from '../core/pipeline.js';
+import { validateImageRules } from '../core/image-rules.js';
 import { validateManifest } from '../core/manifest-schema.js';
 import { validateDataset } from '../core/validate.js';
 import { lstatOrNull, readJsonFile } from '../utils/fs.js';
@@ -52,6 +53,11 @@ function normalize(value: unknown): string {
 export async function publish(runId: string): Promise<void> {
   const rawCurated = await readJsonFile<unknown>(curatedPath(runId));
   const curated = validateDataset(rawCurated);
+  const imageRuleErrors = validateImageRules(curated);
+
+  if (imageRuleErrors.length > 0) {
+    throw new Error(`Curated data failed image policy checks:\n${imageRuleErrors.join('\n')}`);
+  }
 
   const manifestFile = manifestPath(runId);
   await assertNonEmptyFile(manifestFile, 'manifest file');

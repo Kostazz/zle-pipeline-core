@@ -62,3 +62,7 @@ export async function assertDirectoryInsideRoot(expectedRoot: string, targetDir:
     throw new Error(`Unsafe directory: ${targetDir} resolves outside expected root ${expectedRoot}`);
   }
 }
+
+export async function assertRealDirInsideRoot(targetDir: string, expectedRoot: string): Promise<void> {
+  await assertDirectoryInsideRoot(expectedRoot, targetDir);
+}
