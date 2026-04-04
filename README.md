@@ -1,44 +1,44 @@
 # zle-pipeline-core
 
-Schema validation is not enough for product images: this CLI fails early on naming and asset issues before they break publish.
+Validace schématu u produktových obrázků nestačí. Tohle CLI zastaví chyby v názvech a assetech hned na začátku, ještě než rozbijí publish.
 
-## The problem
+## Problém
 
-Teams often ship datasets that are structurally valid JSON but operationally broken: duplicate IDs, weak file naming, missing cover candidates, or inconsistent image sets. These errors usually appear late in publishing or storefront rendering.
+Týmy často posílají datasety, které jsou sice validní JSON, ale provozně nefungují: duplicitní ID, slabé názvy souborů, chybějící kandidát na cover image nebo nekonzistentní sady obrázků. Tyto chyby se obvykle projeví až později při publishi nebo vykreslení storefrontu.
 
-`zle-pipeline-core` is a small fail-closed pipeline for that gap: **ingest → curate → stage → publish**.
+`zle-pipeline-core` je malá fail-closed pipeline přesně pro tuhle mezeru: **ingest → curate → stage → publish**.
 
-## Real-world failure cases this catches
+## Reálné problémy, které to zachytí
 
-- Duplicate product IDs in one run.
-- Products with no source images.
-- Products without a usable cover candidate.
-- Source sets larger than policy allows (max 5).
-- Unsupported image extensions.
-- Suspicious source paths (`..`, absolute paths, backslashes, invalid characters).
+- Duplicitní product ID v jednom běhu.
+- Produkty bez zdrojových obrázků.
+- Produkty bez použitelného kandidáta na cover image.
+- Zdrojové sady větší, než dovoluje policy (max 5).
+- Nepodporované přípony obrázků.
+- Podezřelé source cesty (`..`, absolutní cesty, backslashe, neplatné znaky).
 
-## Policy decisions (explicit)
+## Policy rozhodnutí (explicitně)
 
-This project intentionally uses strict defaults for deterministic pipelines:
-- Cover candidate rule: filename must include `cover`, `hero`, or `main`.
-- Allowed extensions: `.jpg`, `.jpeg`, `.png`, `.webp`.
-- Path hygiene: local relative paths only, no traversal patterns.
+Tenhle projekt záměrně používá přísné výchozí nastavení, aby byla pipeline deterministická:
+- Pravidlo pro cover kandidáta: název souboru musí obsahovat `cover`, `hero` nebo `main`.
+- Povolené přípony: `.jpg`, `.jpeg`, `.png`, `.webp`.
+- Path hygiene: pouze lokální relativní cesty, bez traversal patternů.
 
-These are **policy choices**, not universal truths. Tune them in `src/core/image-rules.ts` for your domain.
+Tohle jsou **policy volby**, ne univerzální pravdy. Pro svůj domain je upravíš v `src/core/image-rules.ts`.
 
-## Fail-closed behavior (practical)
+## Fail-closed chování (prakticky)
 
-If validation, staging, or manifest consistency checks fail, command exits non-zero and pipeline stops. No partial publish state.
+Pokud selže validace, staging nebo kontrola konzistence manifestu, příkaz skončí s nenulovým kódem a pipeline se zastaví. Žádný částečný publish stav.
 
-Each stage re-validates the files it reads (`curated.json`, `manifest.json`) as untrusted input.
-Manifest product IDs must match the same lowercase slug policy (`^[a-z0-9-]+$`).
+Každá stage znovu validuje soubory, které načítá (`curated.json`, `manifest.json`), jako nedůvěryhodný vstup.
+Product ID v manifestu musí odpovídat stejné lowercase slug policy (`^[a-z0-9-]+$`).
 
-## Filesystem safety
+## Bezpečnost filesystému
 
-`runId` is allowlisted (`^run-[A-Za-z0-9_-]+$`) before any file paths are built, so `curate/stage/publish` cannot traverse outside `tmp/` via crafted IDs.
+`runId` se před vytvořením jakýchkoli cest ověřuje přes allowlist (`^run-[A-Za-z0-9_-]+$`), takže `curate/stage/publish` se přes podvržené ID nedostanou mimo `tmp/`.
 
 
-## Repository structure
+## Struktura repozitáře
 
 ```text
 zle-pipeline-core/
@@ -69,13 +69,13 @@ zle-pipeline-core/
     run.sh
 ```
 
-## Install
+## Instalace
 
 ```bash
 npm install
 ```
 
-## Usage
+## Použití
 
 ### Happy path
 
@@ -83,7 +83,7 @@ npm install
 npm run demo
 ```
 
-### Manual flow
+### Manuální flow
 
 ```bash
 npm run ingest  # prints RUN_ID=<value>
@@ -92,7 +92,7 @@ npm run stage -- --run-id <RUN_ID>
 npm run publish -- --run-id <RUN_ID>
 ```
 
-## Output structure
+## Struktura výstupu
 
 ```text
 tmp/
@@ -106,10 +106,10 @@ tmp/
         01.jpg
 ```
 
-## Why this exists
+## Proč to existuje
 
-To provide a compact, credible core for teams that want strict image-set quality gates before adding storage, processing, and orchestration layers.
+Aby týmy měly kompaktní a důvěryhodné jádro s přísnými quality gates pro image sety ještě před přidáním storage, processingu a orchestrace.
 
-## Sponsor
+## Sponzoring
 
-If this helps your product data operations, sponsorship directly supports maintenance.
+Jestli tohle pomáhá vašim operacím nad produktovými daty, sponzoring přímo podporuje údržbu.
